@@ -24,7 +24,7 @@
   const moneyInput=v=>Number(String(v||'').replace(/\s/g,'').replace(',','.'))||0;
   const toast=(message,bad=false)=>{const el=document.createElement('div');el.className='toast';el.textContent=message; if(bad) el.style.background='#9f1d17';document.body.append(el);setTimeout(()=>el.remove(),3600)};
   async function request(method='GET',payload=null,form=false){
-    const opt={method,credentials:'include',headers:{}};
+    const opt={method,credentials:'omit',headers:{}};
     const session=localStorage.getItem(SESSION_KEY);
     if(session) opt.headers['X-Kopilka-Session']=session;
     if(payload){if(form) opt.body=payload;else{opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(payload)}}
@@ -82,7 +82,7 @@
       if(el.dataset.action==='logout'){await request('POST',{action:'logout'});state=null;startLogin(true);return}
       if(el.dataset.open){document.getElementById(el.dataset.open)?.classList.remove('hidden');return}
       if(el.dataset.close){document.getElementById(el.dataset.close)?.classList.add('hidden');return}
-      if(el.dataset.receipt){e.preventDefault();const token=localStorage.getItem(SESSION_KEY)||'';const res=await fetch(`${RECEIPT}?id=${encodeURIComponent(el.dataset.receipt)}`,{headers:{'X-Kopilka-Session':token}});if(!res.ok)throw new Error(await res.text()||'Не удалось открыть чек');const url=URL.createObjectURL(await res.blob());window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);return}
+      if(el.dataset.receipt){e.preventDefault();const token=localStorage.getItem(SESSION_KEY)||'';const res=await fetch(`${RECEIPT}?id=${encodeURIComponent(el.dataset.receipt)}`,{credentials:'omit',headers:{'X-Kopilka-Session':token}});if(!res.ok)throw new Error(await res.text()||'Не удалось открыть чек');const url=URL.createObjectURL(await res.blob());window.open(url,'_blank','noopener');setTimeout(()=>URL.revokeObjectURL(url),60000);return}
       if(el.dataset.report){const amount=prompt('Сколько фактически перевели?','');if(amount===null)return;const d=await request('POST',{action:'reportPayment',paymentId:Number(el.dataset.report),paidAmount:moneyInput(amount)});state=d.state;toast('Оплата отмечена, организатор увидит её');render();return}
       if(el.dataset.confirmPayment||el.dataset.resetPayment){const id=Number(el.dataset.confirmPayment||el.dataset.resetPayment);const d=await request('POST',{action:'setPaymentStatus',paymentId:id,status:el.dataset.confirmPayment?'confirmed':'not_paid'});state=d.state;toast(el.dataset.confirmPayment?'Оплата подтверждена':'Отметка снята');render();return}
       if(el.dataset.saveMember){const row=el.closest('tr');const d=await request('POST',{action:'updateMember',memberId:Number(el.dataset.saveMember),childName:row.querySelector('.member-child').value,parentName:row.querySelector('.member-parent').value});state=d.state;toast('Данные сохранены');render();return}
