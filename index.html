@@ -28,7 +28,7 @@
     const session=localStorage.getItem(SESSION_KEY);
     if(session) opt.headers['X-Kopilka-Session']=session;
     if(payload){if(form) opt.body=payload;else{opt.headers['Content-Type']='application/json';opt.body=JSON.stringify(payload)}}
-    const res=await fetch(API,opt);let data=null;try{data=await res.json()}catch{data={error:await res.text()}}
+    const res=await fetch(API,opt);let data=null;try{const raw=await res.text();data=raw?JSON.parse(raw):{}}catch{data={error:'Сервер вернул некорректный ответ'}}
     if(!res.ok) throw new Error(data?.error||'Не удалось выполнить действие');
     if(data?.sessionToken) localStorage.setItem(SESSION_KEY,data.sessionToken);
     if(payload?.action==='logout') localStorage.removeItem(SESSION_KEY);
