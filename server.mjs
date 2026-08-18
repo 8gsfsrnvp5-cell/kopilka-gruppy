@@ -101,6 +101,7 @@ async function proxy(req, res, target) {
     });
     if (target === upstream.group && method !== 'GET') startGroupWarmup();
   } catch (error) {
+    console.error('proxy error', error?.name || 'Error', error?.message || String(error), error?.cause || '');
     send(res, 502, JSON.stringify({ error: 'Не удалось связаться с базой. Повторите через минуту.' }), 'application/json; charset=utf-8');
   }
 }
