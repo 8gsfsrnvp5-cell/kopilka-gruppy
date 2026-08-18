@@ -108,6 +108,19 @@ async function proxy(req, res, target) {
 
 const server = createServer(async (req, res) => {
   const url = new URL(req.url || '/', 'http://localhost');
+  if (url.pathname === '/debug-upstream') {
+    const started = Date.now();
+    const probe = async (target) => {
+      try {
+        const result = await fetchUpstream(target, { method: 'GET', headers: { Accept: 'application/json' } });
+        return { ok: true, status: result.status, ms: Date.now() - started };
+      } catch (error) {
+        return { ok: false, name: error?.name || 'Error', message: error?.message || String(error), cause: error?.cause?.code || error?.cause?.message || null, ms: Date.now() - started };
+      }
+    };
+    const [supabase, example] = await Promise.all([probe(upstream.group), probe('https://example.com/')]);
+    return send(res, 200, JSON.stringify({ supabase, example }), 'application/json; charset=utf-8');
+  }
   if (url.pathname === '/api/group') return proxy(req, res, upstream.group);
   if (url.pathname === '/api/receipt') return proxy(req, res, upstream.receipt);
   if (url.pathname === '/health') return send(res, 200, 'ok');
